@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+{% block title %}Relatórios — Finance Control Pro{% endblock %}
+{% block page_title %}Relatórios{% endblock %}
+
+{% block content %}
+{% set month_names = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'] %}
+
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Relatórios</h1>
+    <p class="page-sub">{{ month_names[month-1] }} {{ year }}</p>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{{ url_for('reports.export_excel', year=year, month=month) }}" class="btn btn-success btn-sm">
+      <i class="fa-solid fa-file-excel me-2"></i>Excel
+    </a>
+    <a href="{{ url_for('reports.export_pdf', year=year, month=month) }}" class="btn btn-danger btn-sm">
+      <i class="fa-solid fa-file-pdf me-2"></i>PDF
+    </a>
+  </div>
+</div>
+
+<!-- Seletor de período -->
+<div class="card-pro mb-4">
+  <form method="GET" class="row g-2 align-items-end">
+    <div class="col-6 col-md-3">
+      <label class="form-label small">Mês</label>
+      <select name="month" class="form-select" onchange="this.form.submit()">
+        {% for i in range(1,13) %}
+        <option value="{{ i }}" {% if i == month %}selected{% endif %}>{{ month_names[i-1] }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-6 col-md-3">
+      <label class="form-label small">Ano</label>
+      <select name="year" class="form-select" onchange="this.form.submit()">
+        {% for y in range(2022, 2030) %}
+        <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </form>
+</div>
+
+<!-- KPIs -->
+<div class="row g-3 mb-4">
+  <div class="col-md-3"><div class="kpi-card kpi-income">
+    <div class="kpi-icon"><i class="fa-solid fa-arrow-trend-up"></i></div>
+    <div class="kpi-body">
+      <div class="kpi-label">Receitas</div>
+      <div class="kpi-value">R$ {{ "%.2f"|format(summary.total_incomes)|replace('.', ',') }}</div>
+    </div>
+  </div></div>
+  <div class="col-md-3"><div class="kpi-card kpi-expense">
+    <div class="kpi-icon"><i class="fa-solid fa-arrow-trend-down"></i></div>
+    <div class="kpi-body">
+      <div class="kpi-label">Despesas</div>
+      <div class="kpi-value">R$ {{ "%.2f"|format(summary.total_expenses)|replace('.', ',') }}</div>
+    </div>
+  </div></div>
+  <div class="col-md-3"><div class="kpi-card {% if summary.balance >= 0 %}kpi-balance-pos{% else %}kpi-balance-neg{% endif %}">
+    <div class="kpi-icon"><i class="fa-solid fa-wallet"></i></div>
+    <div class="kpi-body">
+      <div class="kpi-label">Saldo</div>
+      <div class="kpi-value">R$ {{ "%.2f"|format(summary.balance)|replace('.', ',') }}</div>
+    </div>
+  </div></div>
+  <div class="col-md-3"><div class="kpi-card kpi-health">
+    <div class="kpi-icon"><i class="fa-solid fa-heart-pulse"></i></div>
+    <div class="kpi-body">
+      <div class="kpi-label">Saúde</div>
+      <div class="kpi-value" style="color:{{ health.color }}">{{ health.score }}/100</div>
+    </div>
+  </div></div>
+</div>
+
+<!-- Gráficos -->
+<div class="row g-3 mb-4">
+  <div class="col-lg-8">
+    <div class="card-pro h-100">
+      <div class="card-pro-header">
+        <i class="fa-solid fa-chart-line me-2 text-primary"></i>
+        <span>Evolução 12 meses</span>
+      </div>
+      <div style="position:relative; height:280px;">
+        <canvas id="barChart"></canvas>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="card-pro h-100">
+      <div class="card-pro-header">
+        <i class="fa-solid fa-chart-pie me-2"></i>
+        <span>Gastos por Categoria</span>
+      </div>
+      {% if cats %}
+      <div style="position:relative; height:220px;">
+        <canvas id="pieChart"></canvas>
+      </div>
+      {% else %}
+      <div class="text-center text-muted py-4">Sem dados</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Tabela de categorias -->
+{% if cats %}
+<div class="card-pro">
+  <div class="card-pro-header mb-3">
+    <i class="fa-solid fa-table me-2"></i>
+    <span>Gastos por Categoria — {{ month_names[month-1] }}/{{ year }}</span>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-pro mb-0">
+      <thead>
+        <tr>
+          <th>Categoria</th>
+          <th class="text-end">Total</th>
+          <th>Participação</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% set total_exp = cats|sum(attribute='total') %}
+        {% for c in cats|sort(attribute='total', reverse=True) %}
+        <tr>
+          <td>
+            <span class="cat-badge" style="background:{{ c.color }}20; color:{{ c.color }}">
+              <i class="fa-solid {{ c.icon }} me-1"></i>{{ c.name }}
+            </span>
+          </td>
+          <td class="text-end fw-semibold text-danger">R$ {{ "%.2f"|format(c.total)|replace('.', ',') }}</td>
+          <td style="min-width:150px">
+            {% set pct = (c.total / total_exp * 100) if total_exp > 0 else 0 %}
+            <div class="d-flex align-items-center gap-2">
+              <div class="progress flex-fill" style="height:8px">
+                <div class="progress-bar" style="width:{{ pct }}%; background:{{ c.color }}"></div>
+              </div>
+              <span class="small text-muted">{{ "%.1f"|format(pct) }}%</span>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const chartData = {{ chart|tojson }};
+const catsData  = {{ cats|tojson }};
+const isDark    = document.documentElement.getAttribute('data-theme') === 'dark';
+const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)';
+const textColor = isDark ? '#94a3b8' : '#64748b';
+
+new Chart(document.getElementById('barChart'), {
+  type: 'bar',
+  data: {
+    labels: chartData.labels,
+    datasets: [
+      { label: 'Receitas',  data: chartData.incomes,  backgroundColor: 'rgba(16,185,129,0.7)',  borderRadius: 6 },
+      { label: 'Despesas', data: chartData.expenses, backgroundColor: 'rgba(239,68,68,0.7)', borderRadius: 6 }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { labels: { color: textColor } } },
+    scales: {
+      x: { grid: { color: gridColor }, ticks: { color: textColor } },
+      y: { grid: { color: gridColor }, ticks: { color: textColor,
+        callback: v => 'R$' + v.toLocaleString('pt-BR') } }
+    }
+  }
+});
+
+if (catsData.length > 0) {
+  new Chart(document.getElementById('pieChart'), {
+    type: 'pie',
+    data: {
+      labels: catsData.map(c => c.name),
+      datasets: [{ data: catsData.map(c => c.total), backgroundColor: catsData.map(c => c.color), borderWidth: 2 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { color: textColor, padding: 12, boxWidth: 12 } } }
+    }
+  });
+}
+</script>
+{% endblock %}

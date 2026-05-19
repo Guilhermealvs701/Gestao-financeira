@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Nova Meta — Finance Control Pro{% endblock %}
+{% block page_title %}Nova Meta{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div><h1 class="page-title">Nova Meta Financeira</h1></div>
+  <a href="{{ url_for('goals.index') }}" class="btn btn-secondary btn-sm">
+    <i class="fa-solid fa-arrow-left me-2"></i>Voltar
+  </a>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-lg-6">
+    <div class="card-pro">
+      <form method="POST" action="{{ url_for('goals.add') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <div class="row g-3">
+          <div class="col-12">
+            <label class="form-label">Título da meta <span class="text-danger">*</span></label>
+            <input type="text" name="title" class="form-control" placeholder="Ex: Reserva de emergência" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Valor alvo (R$) <span class="text-danger">*</span></label>
+            <input type="number" name="target" class="form-control" step="0.01" min="1" placeholder="5000,00" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Valor atual (R$)</label>
+            <input type="number" name="current" class="form-control" step="0.01" min="0" value="0" placeholder="0,00">
+          </div>
+          <div class="col-12">
+            <label class="form-label">Prazo (opcional)</label>
+            <input type="date" name="deadline" class="form-control">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Ícone</label>
+            <input type="text" name="icon" class="form-control" value="fa-bullseye" placeholder="fa-bullseye">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Cor</label>
+            <input type="color" name="color" class="form-control form-control-color" value="#4f46e5">
+          </div>
+          <div class="col-12">
+            <label class="form-label">Descrição</label>
+            <textarea name="description" class="form-control" rows="2" placeholder="Descreva sua meta..."></textarea>
+          </div>
+        </div>
+
+        <div class="d-flex gap-2 mt-4">
+          <button type="submit" class="btn btn-primary flex-fill">
+            <i class="fa-solid fa-bullseye me-2"></i>Criar Meta
+          </button>
+          <a href="{{ url_for('goals.index') }}" class="btn btn-secondary">Cancelar</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

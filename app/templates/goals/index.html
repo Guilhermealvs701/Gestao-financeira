@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}Metas — Finance Control Pro{% endblock %}
+{% block page_title %}Metas Financeiras{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Metas Financeiras</h1>
+    <p class="page-sub">Acompanhe seus objetivos</p>
+  </div>
+  <a href="{{ url_for('goals.add') }}" class="btn btn-primary">
+    <i class="fa-solid fa-plus me-2"></i>Nova Meta
+  </a>
+</div>
+
+{% if goals %}
+<div class="row g-3">
+  {% for g in goals %}
+  <div class="col-md-6 col-xl-4">
+    <div class="goal-card {% if g.completed %}goal-completed{% endif %}">
+      <div class="goal-header">
+        <div class="goal-icon" style="background:{{ g.color }}20; color:{{ g.color }}">
+          <i class="fa-solid {{ g.icon }}"></i>
+        </div>
+        <div class="goal-info">
+          <div class="goal-title">{{ g.title }}</div>
+          {% if g.deadline %}
+          <div class="goal-deadline">
+            <i class="fa-solid fa-calendar-alt me-1"></i>
+            {{ g.deadline.strftime('%d/%m/%Y') }}
+          </div>
+          {% endif %}
+        </div>
+        {% if g.completed %}
+        <span class="badge bg-success ms-auto">✓ Concluída</span>
+        {% endif %}
+      </div>
+
+      <div class="goal-progress-wrap">
+        <div class="d-flex justify-content-between mb-1">
+          <span class="small text-muted">R$ {{ "%.2f"|format(g.current|float)|replace('.', ',') }}</span>
+          <span class="small fw-semibold" style="color:{{ g.color }}">{{ g.progress_percent }}%</span>
+        </div>
+        <div class="progress mb-1" style="height:10px; border-radius:8px">
+          <div class="progress-bar" style="width:{{ g.progress_percent }}%; background:{{ g.color }}; border-radius:8px"></div>
+        </div>
+        <div class="text-muted small">Meta: R$ {{ "%.2f"|format(g.target|float)|replace('.', ',') }}</div>
+      </div>
+
+      {% if g.description %}
+      <p class="goal-desc">{{ g.description }}</p>
+      {% endif %}
+
+      {% if not g.completed %}
+      <div class="goal-actions">
+        <form method="POST" action="{{ url_for('goals.update', goal_id=g.id) }}" class="d-flex gap-2">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="number" name="add_value" class="form-control form-control-sm" step="0.01" min="0.01" placeholder="Adicionar R$">
+          <button type="submit" class="btn btn-sm btn-primary">+</button>
+        </form>
+        <form method="POST" action="{{ url_for('goals.delete', goal_id=g.id) }}" class="ms-1">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn btn-sm btn-outline-danger"
+                  onclick="return confirm('Remover meta {{ g.title }}?')">
+            <i class="fa-solid fa-trash"></i>
+          </button>
+        </form>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+  <i class="fa-solid fa-bullseye fa-3x mb-3 opacity-25"></i>
+  <h5>Nenhuma meta cadastrada</h5>
+  <p class="text-muted">Defina objetivos financeiros e acompanhe seu progresso.</p>
+  <a href="{{ url_for('goals.add') }}" class="btn btn-primary mt-2">
+    <i class="fa-solid fa-plus me-2"></i>Criar Primeira Meta
+  </a>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}Login — Finance Control Pro{% endblock %}
+{% block body_class %}auth-page{% endblock %}
+
+{% block auth_content %}
+<div class="auth-wrapper">
+  <!-- Left panel decorativo -->
+  <div class="auth-panel-left d-none d-lg-flex">
+    <div class="auth-panel-content">
+      <div class="auth-logo mb-4">
+        <i class="fa-solid fa-chart-pie fa-3x"></i>
+      </div>
+      <h1 class="auth-panel-title">Finance<br>Control Pro</h1>
+      <p class="auth-panel-sub">Controle suas finanças de forma inteligente e profissional.</p>
+
+      <div class="auth-features">
+        <div class="auth-feature">
+          <i class="fa-solid fa-chart-line"></i>
+          <span>Dashboard com insights em tempo real</span>
+        </div>
+        <div class="auth-feature">
+          <i class="fa-solid fa-shield-halved"></i>
+          <span>Dados seguros e criptografados</span>
+        </div>
+        <div class="auth-feature">
+          <i class="fa-solid fa-bullseye"></i>
+          <span>Metas e previsões financeiras</span>
+        </div>
+        <div class="auth-feature">
+          <i class="fa-solid fa-file-export"></i>
+          <span>Exportação em PDF e Excel</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right panel — Form -->
+  <div class="auth-panel-right">
+    <div class="auth-form-container">
+      <!-- Mobile logo -->
+      <div class="auth-mobile-logo d-lg-none text-center mb-4">
+        <i class="fa-solid fa-chart-pie fa-2x text-primary"></i>
+        <div class="fw-bold mt-1 text-primary">Finance Control Pro</div>
+      </div>
+
+      <h2 class="auth-form-title">Bem-vindo de volta 👋</h2>
+      <p class="auth-form-sub">Faça login para acessar seu painel financeiro.</p>
+
+      <form method="POST" action="{{ url_for('auth.login') }}" novalidate>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <div class="form-group mb-3">
+          <label class="form-label">E-mail</label>
+          <div class="input-icon">
+            <i class="fa-solid fa-envelope"></i>
+            <input type="email" name="email" class="form-control" placeholder="seu@email.com" required autocomplete="email">
+          </div>
+        </div>
+
+        <div class="form-group mb-3">
+          <label class="form-label">Senha</label>
+          <div class="input-icon">
+            <i class="fa-solid fa-lock"></i>
+            <input type="password" name="password" id="passwordInput" class="form-control" placeholder="••••••••" required autocomplete="current-password">
+            <button type="button" class="input-icon-right" onclick="togglePassword('passwordInput', this)">
+              <i class="fa-solid fa-eye"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div class="form-check">
+            <input type="checkbox" name="remember" class="form-check-input" id="remember">
+            <label class="form-check-label" for="remember">Lembrar-me</label>
+          </div>
+          <span class="text-muted small">Esqueceu a senha? <em>(em breve)</em></span>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-auth w-100">
+          <i class="fa-solid fa-right-to-bracket me-2"></i>Entrar
+        </button>
+      </form>
+
+      <p class="text-center mt-4 text-muted">
+        Não tem conta?
+        <a href="{{ url_for('auth.register') }}" class="text-primary fw-semibold">Cadastre-se grátis</a>
+      </p>
+    </div>
+  </div>
+</div>
+{% endblock %}

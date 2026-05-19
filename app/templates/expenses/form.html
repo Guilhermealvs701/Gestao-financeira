@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Editar' if expense else 'Nova' }} Despesa — Finance Control Pro{% endblock %}
+{% block page_title %}{{ 'Editar' if expense else 'Nova' }} Despesa{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">{{ 'Editar' if expense else 'Nova' }} Despesa</h1>
+    <p class="page-sub">Preencha os dados da despesa</p>
+  </div>
+  <a href="{{ url_for('expenses.index') }}" class="btn btn-secondary btn-sm">
+    <i class="fa-solid fa-arrow-left me-2"></i>Voltar
+  </a>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-lg-7">
+    <div class="card-pro">
+      <form method="POST" novalidate>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <div class="row g-3">
+          <div class="col-12">
+            <label class="form-label">Nome da despesa <span class="text-danger">*</span></label>
+            <input type="text" name="name" class="form-control"
+                   placeholder="Ex: Almoço no restaurante"
+                   value="{{ expense.name if expense else (form_data.name if form_data else '') }}" required>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">Valor (R$) <span class="text-danger">*</span></label>
+            <div class="input-icon">
+              <i class="fa-solid fa-brazilian-real-sign"></i>
+              <input type="number" name="amount" class="form-control" step="0.01" min="0.01"
+                     placeholder="0,00"
+                     value="{{ expense.amount if expense else (form_data.amount if form_data else '') }}" required>
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">Data <span class="text-danger">*</span></label>
+            <input type="date" name="date" class="form-control"
+                   value="{{ expense.date.strftime('%Y-%m-%d') if expense else (form_data.date if form_data else today) }}" required>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">Categoria</label>
+            <select name="category_id" class="form-select">
+              <option value="">Sem categoria</option>
+              {% for c in categories %}
+              <option value="{{ c.id }}"
+                {% if expense and expense.category_id == c.id %}selected
+                {% elif form_data and form_data.category_id == c.id|string %}selected
+                {% endif %}>
+                {{ c.name }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">Forma de pagamento</label>
+            <select name="payment_method" class="form-select">
+              {% for pm in payment_methods %}
+              <option value="{{ pm }}"
+                {% if expense and expense.payment_method == pm %}selected
+                {% elif not expense and pm == 'Dinheiro' %}selected
+                {% endif %}>{{ pm }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-12">
+            <label class="form-label">Observações</label>
+            <textarea name="notes" class="form-control" rows="2"
+                      placeholder="Detalhes adicionais...">{{ expense.notes if expense else '' }}</textarea>
+          </div>
+
+          <div class="col-12">
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" name="is_recurring" id="isRecurring"
+                     {% if expense and expense.is_recurring %}checked{% endif %}>
+              <label class="form-check-label" for="isRecurring">Despesa recorrente</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="d-flex gap-2 mt-4">
+          <button type="submit" class="btn btn-danger flex-fill">
+            <i class="fa-solid fa-{{ 'floppy-disk' if expense else 'plus' }} me-2"></i>
+            {{ 'Salvar' if expense else 'Adicionar Despesa' }}
+          </button>
+          <a href="{{ url_for('expenses.index') }}" class="btn btn-secondary">Cancelar</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

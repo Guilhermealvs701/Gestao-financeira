@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% block title %}Perfil — Finance Control Pro{% endblock %}
+{% block page_title %}Perfil{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">Configurações do Perfil</h1>
+</div>
+
+<div class="row g-3">
+  <!-- Perfil -->
+  <div class="col-lg-6">
+    <div class="card-pro">
+      <div class="card-pro-header mb-3">
+        <i class="fa-solid fa-user-gear me-2 text-primary"></i>
+        <span>Dados pessoais</span>
+      </div>
+      <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="action" value="update_profile">
+
+        <!-- Avatar preview -->
+        <div class="text-center mb-4">
+          <div class="avatar-large mx-auto" style="background:{{ current_user.avatar_color }}" id="avatarPreview">
+            {{ current_user.initials }}
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Nome completo</label>
+          <input type="text" name="name" class="form-control" value="{{ current_user.name }}" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">E-mail</label>
+          <input type="email" class="form-control" value="{{ current_user.email }}" disabled>
+          <div class="form-text">O e-mail não pode ser alterado.</div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Meta de gastos mensais (R$)</label>
+          <div class="input-icon">
+            <i class="fa-solid fa-brazilian-real-sign"></i>
+            <input type="number" name="monthly_goal" class="form-control" step="0.01" min="0"
+                   value="{{ current_user.monthly_goal or '' }}" placeholder="Ex: 3000,00">
+          </div>
+          <div class="form-text">Usado para a barra de progresso no dashboard.</div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Cor do avatar</label>
+          <input type="color" name="avatar_color" class="form-control form-control-color"
+                 value="{{ current_user.avatar_color }}"
+                 oninput="document.getElementById('avatarPreview').style.background=this.value">
+        </div>
+
+        <button type="submit" class="btn btn-primary">
+          <i class="fa-solid fa-floppy-disk me-2"></i>Salvar Perfil
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Senha + Stats -->
+  <div class="col-lg-6">
+    <div class="card-pro mb-3">
+      <div class="card-pro-header mb-3">
+        <i class="fa-solid fa-lock me-2 text-warning"></i>
+        <span>Alterar Senha</span>
+      </div>
+      <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="action" value="change_password">
+
+        <div class="mb-3">
+          <label class="form-label">Senha atual</label>
+          <div class="input-icon">
+            <i class="fa-solid fa-lock"></i>
+            <input type="password" name="current_password" id="pw1" class="form-control" required>
+            <button type="button" class="input-icon-right" onclick="togglePassword('pw1',this)">
+              <i class="fa-solid fa-eye"></i>
+            </button>
+          </div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Nova senha</label>
+          <div class="input-icon">
+            <i class="fa-solid fa-lock"></i>
+            <input type="password" name="new_password" id="pw2" class="form-control" required>
+            <button type="button" class="input-icon-right" onclick="togglePassword('pw2',this)">
+              <i class="fa-solid fa-eye"></i>
+            </button>
+          </div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Confirmar nova senha</label>
+          <div class="input-icon">
+            <i class="fa-solid fa-lock"></i>
+            <input type="password" name="confirm_password" id="pw3" class="form-control" required>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-warning">
+          <i class="fa-solid fa-key me-2"></i>Alterar Senha
+        </button>
+      </form>
+    </div>
+
+    <!-- Info stats -->
+    <div class="card-pro">
+      <div class="card-pro-header mb-3">
+        <i class="fa-solid fa-circle-info me-2 text-info"></i>
+        <span>Informações da Conta</span>
+      </div>
+      <div class="info-list">
+        <div class="info-item">
+          <span class="info-label">Membro desde</span>
+          <span class="info-val">{{ current_user.created_at.strftime('%d/%m/%Y') }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Último acesso</span>
+          <span class="info-val">{{ current_user.last_login.strftime('%d/%m/%Y %H:%M') if current_user.last_login else 'Agora' }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Total de despesas</span>
+          <span class="info-val">{{ current_user.expenses.count() }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Total de receitas</span>
+          <span class="info-val">{{ current_user.incomes.count() }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

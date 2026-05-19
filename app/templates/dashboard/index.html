@@ -1,0 +1,339 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — Finance Control Pro{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+{% set month_names = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'] %}
+
+<!-- ── Saudação ────────────────────────────────────────────────────────────── -->
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Olá, {{ current_user.name.split()[0] }} 👋</h1>
+    <p class="page-sub">{{ month_names[summary.month-1] }} {{ summary.year }} · Veja seu resumo financeiro</p>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{{ url_for('expenses.add') }}" class="btn btn-danger btn-sm">
+      <i class="fa-solid fa-minus me-1"></i>Despesa
+    </a>
+    <a href="{{ url_for('incomes.add') }}" class="btn btn-success btn-sm">
+      <i class="fa-solid fa-plus me-1"></i>Receita
+    </a>
+  </div>
+</div>
+
+<!-- ── KPI Cards ───────────────────────────────────────────────────────────── -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-xl-3">
+    <div class="kpi-card kpi-income">
+      <div class="kpi-icon"><i class="fa-solid fa-arrow-trend-up"></i></div>
+      <div class="kpi-body">
+        <div class="kpi-label">Receitas do mês</div>
+        <div class="kpi-value">R$ {{ "%.2f"|format(summary.total_incomes)|replace('.', ',') }}</div>
+        <div class="kpi-meta">{{ summary.count_incomes }} lançamento(s)</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-xl-3">
+    <div class="kpi-card kpi-expense">
+      <div class="kpi-icon"><i class="fa-solid fa-arrow-trend-down"></i></div>
+      <div class="kpi-body">
+        <div class="kpi-label">Despesas do mês</div>
+        <div class="kpi-value">R$ {{ "%.2f"|format(summary.total_expenses)|replace('.', ',') }}</div>
+        <div class="kpi-meta">{{ summary.count_expenses }} lançamento(s)</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-xl-3">
+    <div class="kpi-card {% if summary.balance >= 0 %}kpi-balance-pos{% else %}kpi-balance-neg{% endif %}">
+      <div class="kpi-icon"><i class="fa-solid fa-wallet"></i></div>
+      <div class="kpi-body">
+        <div class="kpi-label">Saldo do mês</div>
+        <div class="kpi-value {% if summary.balance < 0 %}text-danger{% endif %}">
+          R$ {{ "%.2f"|format(summary.balance)|replace('.', ',') }}
+        </div>
+        <div class="kpi-meta">{{ 'Positivo ✓' if summary.balance >= 0 else 'Negativo ✗' }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-xl-3">
+    <div class="kpi-card kpi-health">
+      <div class="kpi-icon"><i class="fa-solid fa-heart-pulse"></i></div>
+      <div class="kpi-body">
+        <div class="kpi-label">Saúde Financeira</div>
+        <div class="kpi-value" style="color:{{ health.color }}">{{ health.score }}/100</div>
+        <div class="kpi-meta">{{ health.label }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Meta mensal + Previsão ─────────────────────────────────────────────── -->
+<div class="row g-3 mb-4">
+  {% if current_user.monthly_goal and current_user.monthly_goal > 0 %}
+  <div class="col-md-6">
+    <div class="card-pro">
+      <div class="card-pro-header">
+        <i class="fa-solid fa-flag-checkered me-2 text-warning"></i>
+        <span>Meta de Gastos Mensal</span>
+        <a href="{{ url_for('auth.profile') }}" class="ms-auto text-muted small">Editar</a>
+      </div>
+      <div class="goal-bar-wrap">
+        <div class="d-flex justify-content-between mb-1">
+          <span class="small text-muted">R$ {{ "%.2f"|format(summary.total_expenses)|replace('.', ',') }} gastos</span>
+          <span class="small fw-semibold {% if goal_pct > 90 %}text-danger{% elif goal_pct > 70 %}text-warning{% else %}text-success{% endif %}">
+            {{ goal_pct }}%
+          </span>
+        </div>
+        <div class="progress" style="height:12px; border-radius:8px;">
+          <div class="progress-bar {% if goal_pct > 90 %}bg-danger{% elif goal_pct > 70 %}bg-warning{% else %}bg-success{% endif %}"
+               style="width:{{ goal_pct }}%; border-radius:8px;" role="progressbar"></div>
+        </div>
+        <div class="d-flex justify-content-between mt-1">
+          <span class="small text-muted">Meta: R$ {{ "%.2f"|format(current_user.monthly_goal)|replace('.', ',') }}</span>
+          {% if goal_pct > 90 %}
+          <span class="badge bg-danger-subtle text-danger">⚠️ Limite próximo</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="col-md-{% if current_user.monthly_goal and current_user.monthly_goal > 0 %}6{% else %}12{% endif %}">
+    <div class="card-pro">
+      <div class="card-pro-header">
+        <i class="fa-solid fa-crystal-ball me-2 text-primary"></i>
+        <span>Previsão de Gastos</span>
+      </div>
+      <div class="row text-center">
+        <div class="col">
+          <div class="forecast-val text-primary">R$ {{ "%.2f"|format(forecast.current)|replace('.', ',') }}</div>
+          <div class="forecast-label">Gasto até hoje</div>
+        </div>
+        <div class="col">
+          <div class="forecast-val text-warning">R$ {{ "%.2f"|format(forecast.daily_avg)|replace('.', ',') }}</div>
+          <div class="forecast-label">Média diária</div>
+        </div>
+        <div class="col">
+          <div class="forecast-val {% if forecast.forecast > (current_user.monthly_goal or 99999) %}text-danger{% else %}text-success{% endif %}">
+            R$ {{ "%.2f"|format(forecast.forecast)|replace('.', ',') }}
+          </div>
+          <div class="forecast-label">Projeção mensal</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Gráficos ────────────────────────────────────────────────────────────── -->
+<div class="row g-3 mb-4">
+  <!-- Receitas x Despesas -->
+  <div class="col-lg-8">
+    <div class="card-pro h-100">
+      <div class="card-pro-header">
+        <i class="fa-solid fa-chart-line me-2 text-primary"></i>
+        <span>Receitas × Despesas (6 meses)</span>
+      </div>
+      <div style="position:relative; height:260px;">
+        <canvas id="lineChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Categorias -->
+  <div class="col-lg-4">
+    <div class="card-pro h-100">
+      <div class="card-pro-header">
+        <i class="fa-solid fa-chart-donut me-2 text-primary"></i>
+        <span>Gastos por Categoria</span>
+      </div>
+      {% if cats %}
+      <div style="position:relative; height:200px;">
+        <canvas id="donutChart"></canvas>
+      </div>
+      <div class="cat-legend mt-2">
+        {% for c in cats[:5] %}
+        <div class="cat-legend-item">
+          <span class="cat-dot" style="background:{{ c.color }}"></span>
+          <span class="cat-legend-name">{{ c.name }}</span>
+          <span class="cat-legend-val">R$ {{ "%.2f"|format(c.total)|replace('.', ',') }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="text-center text-muted py-4">
+        <i class="fa-solid fa-chart-pie fa-2x mb-2 opacity-25"></i>
+        <p class="mb-0 small">Nenhuma despesa este mês</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- ── Saúde financeira + Últimas despesas ────────────────────────────────── -->
+<div class="row g-3">
+  <!-- Saúde + Sugestões -->
+  <div class="col-lg-4">
+    <div class="card-pro h-100">
+      <div class="card-pro-header">
+        <i class="fa-solid fa-heart-pulse me-2 text-danger"></i>
+        <span>Saúde Financeira</span>
+      </div>
+      <!-- Score gauge -->
+      <div class="health-gauge">
+        <svg viewBox="0 0 120 70" class="gauge-svg">
+          <path d="M 10 60 A 50 50 0 0 1 110 60" stroke="#e9ecef" stroke-width="12" fill="none" stroke-linecap="round"/>
+          <path d="M 10 60 A 50 50 0 0 1 110 60"
+                stroke="{{ health.color }}" stroke-width="12" fill="none" stroke-linecap="round"
+                stroke-dasharray="{{ (health.score / 100) * 157 }} 157"
+                class="gauge-arc"/>
+        </svg>
+        <div class="gauge-score" style="color:{{ health.color }}">{{ health.score }}</div>
+        <div class="gauge-label" style="color:{{ health.color }}">{{ health.label }}</div>
+      </div>
+      <div class="health-meta text-center mb-3">
+        <span class="badge rounded-pill" style="background:{{ health.color }}20; color:{{ health.color }}">
+          Taxa de poupança: {{ health.savings_rate }}%
+        </span>
+      </div>
+      {% if health.suggestions %}
+      <div class="health-suggestions">
+        {% for s in health.suggestions %}
+        <div class="suggestion-item">{{ s }}</div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Últimas despesas -->
+  <div class="col-lg-8">
+    <div class="card-pro h-100">
+      <div class="card-pro-header">
+        <i class="fa-solid fa-clock-rotate-left me-2 text-secondary"></i>
+        <span>Últimas Despesas</span>
+        <a href="{{ url_for('expenses.index') }}" class="ms-auto btn btn-link btn-sm p-0">Ver todas →</a>
+      </div>
+      {% if recent %}
+      <div class="expense-list">
+        {% for e in recent %}
+        <div class="expense-item">
+          <div class="expense-icon" style="background:{{ e.category.color if e.category else '#95a5a6' }}20; color:{{ e.category.color if e.category else '#95a5a6' }}">
+            <i class="fa-solid {{ e.category.icon if e.category else 'fa-tag' }}"></i>
+          </div>
+          <div class="expense-info">
+            <div class="expense-name">{{ e.name }}</div>
+            <div class="expense-meta">
+              {{ e.date.strftime('%d/%m/%Y') }}
+              {% if e.category %} · {{ e.category.name }}{% endif %}
+            </div>
+          </div>
+          <div class="expense-amount text-danger">
+            −R$ {{ "%.2f"|format(e.amount|float)|replace('.', ',') }}
+          </div>
+          <div class="expense-actions">
+            <a href="{{ url_for('expenses.edit', expense_id=e.id) }}" class="btn-icon-sm">
+              <i class="fa-solid fa-pen"></i>
+            </a>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="text-center text-muted py-5">
+        <i class="fa-solid fa-receipt fa-2x mb-2 opacity-25"></i>
+        <p class="mb-2">Nenhuma despesa cadastrada.</p>
+        <a href="{{ url_for('expenses.add') }}" class="btn btn-primary btn-sm">Adicionar agora</a>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const chartData = {{ chart|tojson }};
+const catsData  = {{ cats|tojson }};
+
+// ── Line Chart ────────────────────────────────────────────────────────────────
+const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)';
+const textColor = isDark ? '#94a3b8' : '#64748b';
+
+new Chart(document.getElementById('lineChart'), {
+  type: 'line',
+  data: {
+    labels: chartData.labels,
+    datasets: [
+      {
+        label: 'Receitas',
+        data: chartData.incomes,
+        borderColor: '#10b981',
+        backgroundColor: 'rgba(16,185,129,0.08)',
+        fill: true,
+        tension: 0.4,
+        pointRadius: 4,
+        pointBackgroundColor: '#10b981',
+      },
+      {
+        label: 'Despesas',
+        data: chartData.expenses,
+        borderColor: '#ef4444',
+        backgroundColor: 'rgba(239,68,68,0.08)',
+        fill: true,
+        tension: 0.4,
+        pointRadius: 4,
+        pointBackgroundColor: '#ef4444',
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { labels: { color: textColor, usePointStyle: true, padding: 20 } },
+      tooltip: { mode: 'index', intersect: false }
+    },
+    scales: {
+      x: { grid: { color: gridColor }, ticks: { color: textColor } },
+      y: {
+        grid: { color: gridColor }, ticks: {
+          color: textColor,
+          callback: v => 'R$ ' + v.toLocaleString('pt-BR', { minimumFractionDigits: 0 })
+        }
+      }
+    }
+  }
+});
+
+// ── Donut Chart ───────────────────────────────────────────────────────────────
+if (catsData.length > 0) {
+  new Chart(document.getElementById('donutChart'), {
+    type: 'doughnut',
+    data: {
+      labels: catsData.map(c => c.name),
+      datasets: [{
+        data:            catsData.map(c => c.total),
+        backgroundColor: catsData.map(c => c.color),
+        borderWidth: 2,
+        borderColor: isDark ? '#1e293b' : '#ffffff',
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '65%',
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => ` R$ ${ctx.parsed.toLocaleString('pt-BR',{minimumFractionDigits:2})}`
+          }
+        }
+      }
+    }
+  });
+}
+</script>
+{% endblock %}

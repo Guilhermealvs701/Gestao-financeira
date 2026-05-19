@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+{% block title %}Despesas — Finance Control Pro{% endblock %}
+{% block page_title %}Despesas{% endblock %}
+
+{% block content %}
+{% set month_names = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'] %}
+
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Despesas</h1>
+    <p class="page-sub">{{ month_names[month-1] }} {{ year }}</p>
+  </div>
+  <a href="{{ url_for('expenses.add') }}" class="btn btn-primary">
+    <i class="fa-solid fa-plus me-2"></i>Nova Despesa
+  </a>
+</div>
+
+<!-- Filtros -->
+<div class="card-pro mb-4">
+  <form method="GET" class="row g-2 align-items-end">
+    <div class="col-6 col-md-2">
+      <label class="form-label small">Mês</label>
+      <select name="month" class="form-select form-select-sm" onchange="this.form.submit()">
+        {% for i in range(1,13) %}
+        <option value="{{ i }}" {% if i == month %}selected{% endif %}>{{ month_names[i-1] }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-6 col-md-2">
+      <label class="form-label small">Ano</label>
+      <select name="year" class="form-select form-select-sm" onchange="this.form.submit()">
+        {% for y in range(2022, 2030) %}
+        <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-6 col-md-2">
+      <label class="form-label small">Categoria</label>
+      <select name="category" class="form-select form-select-sm">
+        <option value="">Todas</option>
+        {% for c in categories %}
+        <option value="{{ c.id }}" {% if cat_id == c.id %}selected{% endif %}>{{ c.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-6 col-md-2">
+      <label class="form-label small">Pagamento</label>
+      <select name="payment" class="form-select form-select-sm">
+        <option value="">Todos</option>
+        {% for pm in payment_methods %}
+        <option value="{{ pm }}" {% if pay_method == pm %}selected{% endif %}>{{ pm }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label small">Buscar</label>
+      <input type="text" name="search" class="form-control form-control-sm"
+             placeholder="Nome da despesa..." value="{{ search }}">
+    </div>
+    <div class="col-md-1">
+      <button type="submit" class="btn btn-primary btn-sm w-100">
+        <i class="fa-solid fa-search"></i>
+      </button>
+    </div>
+  </form>
+</div>
+
+<!-- Total -->
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <span class="text-muted small">{{ expenses|length }} resultado(s)</span>
+  <div class="total-badge">
+    Total: <strong>R$ {{ "%.2f"|format(total)|replace('.', ',') }}</strong>
+  </div>
+</div>
+
+<!-- Tabela / Cards -->
+{% if expenses %}
+<div class="card-pro p-0">
+  <div class="table-responsive">
+    <table class="table table-pro mb-0">
+      <thead>
+        <tr>
+          <th>Data</th>
+          <th>Nome</th>
+          <th>Categoria</th>
+          <th>Pagamento</th>
+          <th class="text-end">Valor</th>
+          <th class="text-center">Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for e in expenses %}
+        <tr>
+          <td class="text-muted small">{{ e.date.strftime('%d/%m/%Y') }}</td>
+          <td>
+            <div class="fw-medium">{{ e.name }}</div>
+            {% if e.notes %}<div class="text-muted small">{{ e.notes[:40] }}{% if e.notes|length > 40 %}...{% endif %}</div>{% endif %}
+          </td>
+          <td>
+            {% if e.category %}
+            <span class="cat-badge" style="background:{{ e.category.color }}20; color:{{ e.category.color }}">
+              <i class="fa-solid {{ e.category.icon }} me-1"></i>{{ e.category.name }}
+            </span>
+            {% else %}
+            <span class="text-muted small">—</span>
+            {% endif %}
+          </td>
+          <td><span class="text-muted small">{{ e.payment_method }}</span></td>
+          <td class="text-end fw-semibold text-danger">
+            R$ {{ "%.2f"|format(e.amount|float)|replace('.', ',') }}
+          </td>
+          <td class="text-center">
+            <div class="d-flex gap-1 justify-content-center">
+              <a href="{{ url_for('expenses.edit', expense_id=e.id) }}" class="btn btn-icon-table text-primary" title="Editar">
+                <i class="fa-solid fa-pen-to-square"></i>
+              </a>
+              <button onclick="confirmDelete('{{ url_for('expenses.delete', expense_id=e.id) }}', '{{ e.name }}')"
+                      class="btn btn-icon-table text-danger" title="Excluir">
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr class="table-total">
+          <td colspan="4" class="fw-semibold">Total</td>
+          <td class="text-end fw-bold text-danger">R$ {{ "%.2f"|format(total)|replace('.', ',') }}</td>
+          <td></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+</div>
+{% else %}
+<div class="empty-state">
+  <i class="fa-solid fa-receipt fa-3x mb-3 opacity-25"></i>
+  <h5>Nenhuma despesa encontrada</h5>
+  <p class="text-muted">Tente ajustar os filtros ou adicione uma nova despesa.</p>
+  <a href="{{ url_for('expenses.add') }}" class="btn btn-primary mt-2">
+    <i class="fa-solid fa-plus me-2"></i>Adicionar Despesa
+  </a>
+</div>
+{% endif %}
+
+<!-- Modal confirmação -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-header border-0">
+        <h6 class="modal-title"><i class="fa-solid fa-triangle-exclamation text-danger me-2"></i>Confirmar exclusão</h6>
+      </div>
+      <div class="modal-body">
+        <p class="mb-0">Deseja excluir <strong id="deleteItemName"></strong>?</p>
+      </div>
+      <div class="modal-footer border-0">
+        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+        <form id="deleteForm" method="POST">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn btn-danger btn-sm">Excluir</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function confirmDelete(url, name) {
+  document.getElementById('deleteForm').action = url;
+  document.getElementById('deleteItemName').textContent = name;
+  new bootstrap.Modal(document.getElementById('deleteModal')).show();
+}
+</script>
+{% endblock %}

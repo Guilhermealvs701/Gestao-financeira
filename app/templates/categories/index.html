@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}Categorias — Finance Control Pro{% endblock %}
+{% block page_title %}Categorias{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Categorias</h1>
+    <p class="page-sub">Gerencie suas categorias de despesas</p>
+  </div>
+</div>
+
+<div class="row g-3">
+  <!-- Adicionar -->
+  <div class="col-lg-4">
+    <div class="card-pro">
+      <div class="card-pro-header mb-3">
+        <i class="fa-solid fa-plus me-2 text-primary"></i>
+        <span>Nova Categoria</span>
+      </div>
+      <form method="POST" action="{{ url_for('categories.add') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="mb-3">
+          <label class="form-label small">Nome</label>
+          <input type="text" name="name" class="form-control" placeholder="Ex: Pets" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label small">Ícone (Font Awesome)</label>
+          <div class="input-icon">
+            <i class="fa-solid fa-icons"></i>
+            <input type="text" name="icon" class="form-control" value="fa-tag" placeholder="fa-tag">
+          </div>
+          <div class="form-text">
+            <a href="https://fontawesome.com/icons" target="_blank">Ver ícones disponíveis →</a>
+          </div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label small">Cor</label>
+          <input type="color" name="color" class="form-control form-control-color" value="#4f46e5">
+        </div>
+        <button type="submit" class="btn btn-primary w-100">
+          <i class="fa-solid fa-plus me-2"></i>Criar Categoria
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Lista -->
+  <div class="col-lg-8">
+    <div class="card-pro">
+      <div class="card-pro-header mb-3">
+        <i class="fa-solid fa-tags me-2"></i>
+        <span>Todas as Categorias ({{ categories|length }})</span>
+      </div>
+      <div class="row g-2">
+        {% for c in categories %}
+        <div class="col-md-6">
+          <div class="cat-card" style="border-left: 4px solid {{ c.color }}">
+            <div class="cat-card-icon" style="background:{{ c.color }}20; color:{{ c.color }}">
+              <i class="fa-solid {{ c.icon }}"></i>
+            </div>
+            <div class="cat-card-info">
+              <div class="fw-medium">{{ c.name }}</div>
+              <div class="text-muted small">{{ 'Padrão' if c.is_default else 'Personalizada' }}</div>
+            </div>
+            {% if not c.is_default %}
+            <form method="POST" action="{{ url_for('categories.delete', cat_id=c.id) }}" class="ms-auto">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="btn btn-icon-table text-danger"
+                      onclick="return confirm('Remover categoria {{ c.name }}?')">
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            </form>
+            {% else %}
+            <span class="ms-auto badge bg-secondary-subtle text-secondary small">Sistema</span>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
